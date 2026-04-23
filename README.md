@@ -98,7 +98,7 @@ Este repositorio es el código base que se usa en las actividades prácticas.
 | Experiencia 2 – Docker en local | Build de imagen, `docker run`, volúmenes, redes, Docker Compose |
 | Experiencia 3 – ECR + EC2 | Push a Amazon ECR, despliegue en instancia EC2 |
 
-Repositorio de ejercicios: [repo_ejercicios](https://github.com/Umbingelelo/frontend_intro_devops)
+Repositorio de ejercicios: [ejercicios-intro-herramientas-devops](https://github.com/Umbingelelo/ejercicios-intro-herramientas-devops)
 
 ---
 
