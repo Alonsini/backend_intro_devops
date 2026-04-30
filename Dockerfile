@@ -1,31 +1,31 @@
-# ============================================================
-# Dockerfile - Backend (Node.js + Express)
-# Experiencia 2 - Introduccion a Herramientas DevOps
-# ============================================================
-
-# 1) Imagen base oficial de Node (ligera: alpine ~ 50MB)
-FROM node:20-alpine
-
-# 2) Metadatos (opcional, buena practica)
-LABEL maintainer="curso-devops"
-LABEL descripcion="API de tareas - Experiencia 2"
-
-# 3) Directorio de trabajo dentro del contenedor
+# ---------- ETAPA 1: builder ----------
+FROM node:20-alpine AS builder
 WORKDIR /app
-
-# 4) Copiamos SOLO los package*.json primero.
-#    Esto aprovecha la cache de Docker: si no cambian
-#    las dependencias, no se reinstalan en cada build.
 COPY package*.json ./
 
-# 5) Instalamos dependencias de produccion
-RUN npm install --omit=dev
+# Si existe package-lock.json -> npm ci (reproducible).
+# Si no -> npm install (fallback para que el build no se rompa).
+RUN if [ -f package-lock.json ]; then \
+      npm ci --omit=dev; \
+    else \
+      echo ">>> AVISO: sin package-lock.json, usando npm install"; \
+      npm install --omit=dev; \
+    fi
 
-# 6) Copiamos el resto del codigo fuente
 COPY . .
 
-# 7) Puerto interno que expone el contenedor
-EXPOSE 3000
+# ---------- ETAPA 2: runtime ----------
+FROM node:20-alpine AS runtime
+WORKDIR /app
 
-# 8) Comando que se ejecuta al iniciar el contenedor
+COPY --from=builder --chown=node:node /app/node_modules ./node_modules
+COPY --from=builder --chown=node:node /app/package*.json ./
+COPY --from=builder --chown=node:node /app/src ./src
+
+RUN mkdir -p /data && chown -R node:node /data
+
+USER node
+EXPOSE 3000
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://127.0.0.1:3000/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
 CMD ["node", "src/server.js"]
